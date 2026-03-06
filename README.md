@@ -16,6 +16,13 @@ It includes a CLI that can:
 - reset it
 - destroy it
 - scan for a basic RBAC weakness
+- build an in-memory attack graph
+- rank attack paths from a starting pod or service account
+- explain why a path exists
+- export the reachable graph as Mermaid
+- export the reachable graph as DOT
+- serve a lightweight browser UI for graph exploration
+- compare graph snapshots over time
 - run attack scenarios that exercise the vulnerable setup
 
 This project is intended for local, disposable environments such as `kind`. Do not deploy it into a shared or production cluster.
@@ -86,7 +93,7 @@ When you run `lab-cli start`, the lab creates:
 
 ### Vulnerable RBAC
 
-The vulnerable roles are created in [internal/cluster/rbac.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/cluster/rbac.go:12):
+The vulnerable roles are created in [internal/cluster/rbac.go](/internal/cluster/rbac.go:12):
 
 - `rbac-manager`
   - allows `create` on `rolebindings`
@@ -112,22 +119,22 @@ The lab seeds one secret in `tenant-a`:
   - `username=admin`
   - `password=SuperSecretPassword123`
 
-This is created in [internal/cluster/secrets.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/cluster/secrets.go:11).
+This is created in [internal/cluster/secrets.go](/internal/cluster/secrets.go:11).
 
 ## Repository Layout
 
-- [cmd/lab-cli/main.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/cmd/lab-cli/main.go:1): CLI entrypoint
-- [internal/commands](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/commands): command dispatch and subcommands
-- [internal/cluster](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/cluster): cluster bootstrap, reset, destroy, client helpers
-- [internal/scenarios](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios): attack scenario implementations
-- [internal/scanner/rbac.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scanner/rbac.go:1): simple RBAC scanner
-- [manifests/tenants.yaml](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/manifests/tenants.yaml:1): static namespace manifest
-- [manifests/vulnerable-rbac.yaml](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/manifests/vulnerable-rbac.yaml:1): static RBAC reference manifest
-- [cluster/kind-config.yaml](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/cluster/kind-config.yaml:1): sample `kind` cluster config
+- [cmd/lab-cli/main.go](/cmd/lab-cli/main.go:1): CLI entrypoint
+- [internal/commands](/internal/commands): command dispatch and subcommands
+- [internal/cluster](/internal/cluster): cluster bootstrap, reset, destroy, client helpers
+- [internal/scenarios](/internal/scenarios): attack scenario implementations
+- [internal/scanner/rbac.go](/internal/scanner/rbac.go:1): simple RBAC scanner
+- [manifests/tenants.yaml](/manifests/tenants.yaml:1): static namespace manifest
+- [manifests/vulnerable-rbac.yaml](/manifests/vulnerable-rbac.yaml:1): static RBAC reference manifest
+- [cluster/kind-config.yaml](/cluster/kind-config.yaml:1): sample `kind` cluster config
 
 ## Prerequisites
 
-- Go `1.25` or compatible with [go.mod](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/go.mod:1)
+- Go `1.25` or compatible with [go.mod](/go.mod:1)
 - a running Kubernetes cluster
 - `kubectl` configured to point at that cluster
 - enough privileges from your normal kubeconfig to create namespaces, service accounts, roles, role bindings, pods, secrets, and services
@@ -166,7 +173,32 @@ go build -o lab-cli ./cmd/lab-cli
 ./lab-cli scan
 ```
 
-### 5. Run A Scenario
+### 5. Discover Attack Paths
+
+```bash
+./lab-cli graph paths
+./lab-cli graph export --format mermaid
+./lab-cli graph export --format dot
+./lab-cli graph export --format json
+./lab-cli graph explain --goal node
+./lab-cli graph serve --addr 127.0.0.1:8080
+```
+
+By default, the graph starts from `sa:tenant-a/tenant-sa`.
+
+You can override the start node:
+
+```bash
+./lab-cli graph paths --from sa:tenant-a/tenant-sa
+./lab-cli graph paths --from pod:tenant-a/token-attacker
+./lab-cli graph paths --from sa:tenant-a/tenant-sa --goal node-compromise
+./lab-cli graph paths --goal node
+./lab-cli graph paths --namespace tenant-a --top 3
+./lab-cli graph paths --format json
+./lab-cli graph explain --goal secret
+```
+
+### 6. Run A Scenario
 
 Examples:
 
@@ -179,7 +211,7 @@ Examples:
 ./lab-cli attack configmap-poison
 ```
 
-### 6. Reset Or Destroy
+### 7. Reset Or Destroy
 
 ```bash
 ./lab-cli reset
@@ -204,7 +236,7 @@ Runs a basic RBAC check that flags roles with `create` permissions:
 ./lab-cli scan
 ```
 
-Implementation: [internal/scanner/rbac.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scanner/rbac.go:1)
+Implementation: [internal/scanner/rbac.go](/internal/scanner/rbac.go:1)
 
 ### `attack`
 
@@ -227,7 +259,58 @@ Supported values:
 - `lateral`
 - `escape`
 
-Dispatch logic: [internal/commands/attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/commands/attack.go:8)
+Dispatch logic: [internal/commands/attack.go](/internal/commands/attack.go:8)
+
+### `graph`
+
+Builds a workload-aware attack graph from live cluster state and either prints ranked attack paths or exports graph data.
+
+Examples:
+
+```bash
+./lab-cli graph paths
+./lab-cli graph paths --from sa:tenant-a/tenant-sa
+./lab-cli graph paths --from sa:tenant-a/tenant-sa --goal node-compromise
+./lab-cli graph paths --goal node
+./lab-cli graph paths --namespace tenant-a --top 5
+./lab-cli graph paths --format json
+./lab-cli graph explain --goal secret
+./lab-cli graph explain --goal node --format json
+./lab-cli graph export --format mermaid
+./lab-cli graph export --format dot
+./lab-cli graph export --format json
+./lab-cli graph diff --before before.json
+./lab-cli graph diff --before before.json --after after.json --format json
+./lab-cli graph serve --addr 127.0.0.1:8080
+```
+
+Current subcommands:
+
+- `graph paths`
+- `graph explain`
+- `graph export --format mermaid`
+- `graph export --format dot`
+- `graph export --format json`
+- `graph diff`
+- `graph serve`
+
+`graph serve` starts a lightweight browser UI backed by the same attack graph engine. The UI supports:
+
+- live graph rendering
+- zoom in, zoom out, and reset zoom controls
+- ranked path discovery
+- explanation output with scenario recommendations
+- graph snapshot download
+- diffing a saved snapshot against the live cluster graph
+
+Implementation:
+
+- [internal/commands/graph.go](/internal/commands/graph.go:1)
+- [internal/webapp/server.go](/internal/webapp/server.go:1)
+- [internal/webapp/static/index.html](/internal/webapp/static/index.html:1)
+- [internal/webapp/static/app.js](/internal/webapp/static/app.js:1)
+
+Implementation entrypoint: [internal/commands/graph.go](/internal/commands/graph.go:10)
 
 ### `reset`
 
@@ -237,7 +320,7 @@ Deletes scenario-created artifacts and restores the vulnerable seed state:
 ./lab-cli reset
 ```
 
-Implementation: [internal/cluster/reset.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/cluster/reset.go:10)
+Implementation: [internal/cluster/reset.go](/internal/cluster/reset.go:10)
 
 ### `destroy`
 
@@ -251,7 +334,7 @@ Deletes the lab namespaces:
 
 ### `rbac`
 
-File: [internal/scenarios/rbac_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/rbac_attack.go:12)
+File: [internal/scenarios/rbac_attack.go](/internal/scenarios/rbac_attack.go:12)
 
 The scenario creates a `RoleBinding` in `tenant-a` that binds `tenant-sa` to the built-in `cluster-admin` `ClusterRole`.
 
@@ -268,7 +351,7 @@ What it shows:
 
 ### `token`
 
-File: [internal/scenarios/token_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/token_attack.go:20)
+File: [internal/scenarios/token_attack.go](/internal/scenarios/token_attack.go:20)
 
 The scenario creates a pod running as `tenant-sa`, then reads the mounted ServiceAccount token from inside the pod and uses it against the Kubernetes API.
 
@@ -279,7 +362,7 @@ What it shows:
 
 ### `token-request`
 
-File: [internal/scenarios/token_request_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/token_request_attack.go:16)
+File: [internal/scenarios/token_request_attack.go](/internal/scenarios/token_request_attack.go:16)
 
 The scenario simulates a compromised `tenant-sa` identity, uses it to call the TokenRequest API, and prints a fresh JWT plus the effective permissions of that token.
 
@@ -290,7 +373,7 @@ What it shows:
 
 ### `secrets`
 
-File: [internal/scenarios/secrets_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/secrets_attack.go:12)
+File: [internal/scenarios/secrets_attack.go](/internal/scenarios/secrets_attack.go:12)
 
 The scenario lists secrets from `tenant-a` and prints their contents.
 
@@ -306,7 +389,7 @@ Practical note:
 
 ### `pod-create`
 
-File: [internal/scenarios/pod_create_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/pod_create_attack.go:16)
+File: [internal/scenarios/pod_create_attack.go](/internal/scenarios/pod_create_attack.go:16)
 
 The scenario uses compromised `tenant-sa` credentials to create a pod that mounts `db-credentials` and prints the secret values to its logs.
 
@@ -317,7 +400,7 @@ What it shows:
 
 ### `exec`
 
-File: [internal/scenarios/exec_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/exec_attack.go:17)
+File: [internal/scenarios/exec_attack.go](/internal/scenarios/exec_attack.go:17)
 
 The scenario deploys a victim pod whose environment variables come from `db-credentials`, then uses compromised `tenant-sa` credentials to exec into that pod and print the values.
 
@@ -328,7 +411,7 @@ What it shows:
 
 ### `cronjob`
 
-File: [internal/scenarios/cronjob_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/cronjob_attack.go:15)
+File: [internal/scenarios/cronjob_attack.go](/internal/scenarios/cronjob_attack.go:15)
 
 The scenario uses compromised `tenant-sa` credentials to create a CronJob in `tenant-a`. It then triggers one run immediately to show that the scheduled workload can repeatedly access the seeded secret.
 
@@ -340,7 +423,7 @@ What it shows:
 
 ### `configmap-poison`
 
-File: [internal/scenarios/configmap_poison_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/configmap_poison_attack.go:15)
+File: [internal/scenarios/configmap_poison_attack.go](/internal/scenarios/configmap_poison_attack.go:15)
 
 The scenario creates a victim pod that executes a script from a `ConfigMap`, then uses compromised `tenant-sa` credentials to modify that `ConfigMap` and reruns the victim workload to show the changed behavior.
 
@@ -352,7 +435,7 @@ What it shows:
 
 ### `lateral`
 
-File: [internal/scenarios/lateral_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/lateral_attack.go:14)
+File: [internal/scenarios/lateral_attack.go](/internal/scenarios/lateral_attack.go:14)
 
 The scenario creates a service in `tenant-b` and demonstrates that a pod in `tenant-a` can reach it.
 
@@ -363,7 +446,7 @@ What it shows:
 
 ### `escape`
 
-File: [internal/scenarios/escape_attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/scenarios/escape_attack.go:14)
+File: [internal/scenarios/escape_attack.go](/internal/scenarios/escape_attack.go:14)
 
 The scenario deploys a privileged pod with `hostPath: /` mounted to `/host`.
 
@@ -374,9 +457,133 @@ What it shows:
 
 ## Manual Exploitation Guide
 
-Step-by-step manual exploitation flows are in [manualtests.md](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/manualtests.md:1).
+Step-by-step manual exploitation flows are in [manualtests.md](/manualtests.md:1).
 
 That file shows how to reproduce each scenario with `kubectl` and shell commands instead of the Go CLI.
+
+## Attack Graph
+
+The attack graph is intentionally explicit and rule-based.
+
+- Phase 1 added RBAC-driven capability derivation
+- Phase 2 added workload-context refinement and Graphviz DOT export
+- Phase 3 adds improved scoring, goal aliases, namespace filtering, top-N selection, and JSON output
+- Phase 4 adds path explanations, lab-scenario mapping, and graph diffs
+
+### What It Collects
+
+- Pods
+- ServiceAccounts
+- Roles
+- RoleBindings
+- ClusterRoles
+- ClusterRoleBindings
+- Secrets
+- ConfigMaps
+- CronJobs
+
+Inventory collection starts in [internal/attackgraph/inventory.go](/internal/attackgraph/inventory.go:13).
+
+### What It Collects From Workloads
+
+Phase 2 refines workload context by distinguishing:
+
+- secrets injected through environment variables
+- secrets mounted as volumes
+- ConfigMaps injected through environment variables
+- ConfigMaps mounted as files
+
+This improves path quality for `pods/exec` and ConfigMap poisoning cases.
+
+### What It Derives
+
+For the current lab, the graph engine derives these attack capabilities from RBAC:
+
+- bind powerful role
+- mint fresh ServiceAccount token
+- create arbitrary pod
+- create privileged hostPath pod
+- exec into existing pod
+- establish persistence
+- modify workload behavior
+
+From those capabilities and workload relationships it derives impact nodes such as:
+
+- namespace admin-equivalent
+- fresh ServiceAccount token
+- workload command execution
+- secret exposure
+- persistence
+- config integrity compromise
+- node compromise
+
+### Phase 3 Query Features
+
+Phase 3 adds query usability features:
+
+- goal aliases such as `node`, `secret`, `admin`, `exec`, `config`, and `token`
+- `--namespace <ns>` to keep paths and exports focused on a tenant
+- `--top <n>` to return only the highest-ranked paths
+- JSON output for both path results and full graph exports
+
+Examples:
+
+```bash
+./lab-cli graph paths --goal node
+./lab-cli graph paths --goal secret --namespace tenant-a --top 3
+./lab-cli graph paths --format json
+./lab-cli graph export --format json --namespace tenant-a
+```
+
+### Phase 4 Explanation And Diff
+
+Phase 4 adds two operator-facing workflows:
+
+1. Explain a path in human terms and map it back to the lab’s concrete attack scenarios.
+2. Diff graph snapshots before and after an operation such as `start`, `attack`, or `reset`.
+
+Examples:
+
+```bash
+./lab-cli graph explain --goal node
+./lab-cli graph explain --goal secret --format json
+./lab-cli graph export --format json > before.json
+./lab-cli attack exec
+./lab-cli graph diff --before before.json
+```
+
+The explanation output is built from the actual path edges and includes related `lab-cli attack ...` commands when a path matches one of the implemented scenarios.
+
+Snapshot diffing works against the JSON export format. This is intended for before/after comparisons of live cluster state.
+
+Rule construction starts in [internal/attackgraph/build.go](/internal/attackgraph/build.go:18).
+
+### Example Path Shape
+
+Typical paths look like:
+
+```text
+ServiceAccount tenant-a/tenant-sa
+  -> Permission create pods
+  -> Capability Create arbitrary pod
+  -> Capability Create privileged hostPath pod
+  -> Impact Node compromise
+```
+
+### Current Scope
+
+The current implementation is deliberately bounded:
+
+- in-memory only
+- no persistent graph storage
+- explicit rules for the lab’s known abuse cases
+- workload-aware secret and ConfigMap consumer detection
+- improved path scoring and goal aliases
+- terminal output plus Mermaid, DOT, and JSON export
+- explanation output and snapshot diffs
+- default starting point is `tenant-sa`
+
+Search and ranking logic starts in [internal/attackgraph/search.go](/internal/attackgraph/search.go:8).
 
 ## Development Notes
 
@@ -394,9 +601,9 @@ gofmt -w ./cmd ./internal
 
 ### Main Entry Points
 
-- lab bootstrap: [internal/cluster/start.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/cluster/start.go:5)
-- scenario dispatch: [internal/commands/attack.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/commands/attack.go:8)
-- token simulation helper: [internal/cluster/serviceaccount_tokens.go](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/internal/cluster/serviceaccount_tokens.go:12)
+- lab bootstrap: [internal/cluster/start.go](/internal/cluster/start.go:5)
+- scenario dispatch: [internal/commands/attack.go](/internal/commands/attack.go:8)
+- token simulation helper: [internal/cluster/serviceaccount_tokens.go](/internal/cluster/serviceaccount_tokens.go:12)
 
 ## Limitations
 
@@ -418,5 +625,5 @@ gofmt -w ./cmd ./internal
 3. Run `./lab-cli scan`.
 4. Execute one scenario at a time.
 5. Use `./lab-cli reset` between scenarios.
-6. Use [manualtests.md](/Users/gdieu/Documents/projects/labs/k8sSecurityLab/manualtests.md:1) to reproduce the same exploit path manually.
+6. Use [manualtests.md](/manualtests.md:1) to reproduce the same exploit path manually.
 7. Run `./lab-cli destroy` when finished.

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kubernetes Attack Graph</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <h1>Attack Graph</h1>
+      <p class="lede">Interactive view for graph, paths, explanations, and snapshot diffs.</p>
+
+      <label>Start Node
+        <input id="startRef" type="text" value="sa:tenant-a/tenant-sa">
+      </label>
+
+      <label>Namespace
+        <input id="namespace" type="text" value="">
+      </label>
+
+      <label>Goal
+        <input id="goal" type="text" value="">
+      </label>
+
+      <label>Top Paths
+        <input id="top" type="number" min="1" value="5">
+      </label>
+
+      <div class="button-group">
+        <button id="loadGraphBtn">Load Graph</button>
+        <button id="loadPathsBtn">Show Paths</button>
+        <button id="explainBtn">Explain</button>
+        <button id="downloadBtn">Download Snapshot</button>
+      </div>
+
+      <section class="tool-block">
+        <h2>Diff</h2>
+        <input id="beforeFile" type="file" accept="application/json,.json">
+        <button id="diffBtn">Diff Against Live</button>
+      </section>
+
+      <section class="tool-block">
+        <h2>Viewport</h2>
+        <p class="small-note">Use zoom controls for dense graphs. The canvas scrolls when zoomed in.</p>
+      </section>
+
+      <section class="tool-block">
+        <h2>Legend</h2>
+        <ul class="legend">
+          <li><span class="swatch sa"></span> ServiceAccount</li>
+          <li><span class="swatch pod"></span> Pod</li>
+          <li><span class="swatch permission"></span> Permission</li>
+          <li><span class="swatch capability"></span> Capability</li>
+          <li><span class="swatch impact"></span> Impact</li>
+          <li><span class="swatch secret"></span> Secret</li>
+          <li><span class="swatch configmap"></span> ConfigMap</li>
+        </ul>
+      </section>
+    </aside>
+
+    <main class="graph-panel">
+      <div class="graph-toolbar">
+        <div id="status">Ready.</div>
+        <div class="graph-toolbar-right">
+          <div id="graphStats" class="badge-row"></div>
+          <div class="zoom-controls">
+            <button id="zoomOutBtn" class="secondary" type="button">-</button>
+            <button id="zoomResetBtn" class="secondary" type="button">100%</button>
+            <button id="zoomInBtn" class="secondary" type="button">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="graph-canvas">
+        <svg id="graphSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </main>
+
+    <aside class="details-panel">
+      <section>
+        <h2>Selected</h2>
+        <pre id="selectedDetails">Nothing selected.</pre>
+      </section>
+
+      <section>
+        <h2>Paths</h2>
+        <div id="pathsList" class="result-list"></div>
+      </section>
+
+      <section>
+        <h2>Explain</h2>
+        <pre id="explainOutput">No explanation loaded.</pre>
+      </section>
+
+      <section>
+        <h2>Scenarios</h2>
+        <div id="scenarioList" class="scenario-list">
+          <div class="small-note">No scenario recommendations loaded.</div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Diff</h2>
+        <pre id="diffOutput">No diff loaded.</pre>
+      </section>
+    </aside>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -31,6 +31,11 @@ Usage:
   lab-cli reset           Reset vulnerable scenarios
   lab-cli destroy         Remove lab namespaces
   lab-cli scan            Run security scanners
+  lab-cli graph paths     Discover ranked attack paths
+  lab-cli graph explain   Explain why a path exists
+  lab-cli graph export    Export the attack graph
+  lab-cli graph diff      Compare graph snapshots
+  lab-cli graph serve     Serve the web graph UI
   lab-cli attack rbac     Execute RBAC escalation attack
   lab-cli attack token-request
   lab-cli attack pod-create

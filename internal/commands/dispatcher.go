@@ -12,6 +12,7 @@ var commandRegistry = map[string]CommandFunc{
 	"destroy": DestroyCommand,
 	"scan":    ScanCommand,
 	"attack":  AttackCommand,
+	"graph":   GraphCommand,
 }
 
 func Dispatch(args []string) error {

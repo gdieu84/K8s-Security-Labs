@@ -34,6 +34,91 @@ kubectl --token="$TENANT_TOKEN" -n tenant-a auth can-i create pods
 export TENANT_TOKEN=$(kubectl -n tenant-a create token tenant-sa)
 ```
 
+### 4. Validate The Attack Graph
+
+After `start`, you can inspect the current graph directly:
+
+```bash
+./lab-cli graph paths
+```
+
+Expected themes in the output:
+
+- namespace admin-equivalent
+- fresh ServiceAccount token
+- workload command execution
+- secret exposure
+- persistence
+- config integrity compromise
+- node compromise
+
+Export the reachable graph as Mermaid:
+
+```bash
+./lab-cli graph export --format mermaid
+```
+
+Export the same reachable graph as Graphviz DOT:
+
+```bash
+./lab-cli graph export --format dot
+```
+
+Export the same graph as JSON:
+
+```bash
+./lab-cli graph export --format json
+```
+
+Filter to one goal:
+
+```bash
+./lab-cli graph paths --goal node-compromise
+```
+
+Use a goal alias, top-N ranking, and namespace scoping:
+
+```bash
+./lab-cli graph paths --goal node --top 3
+./lab-cli graph paths --goal secret --namespace tenant-a
+./lab-cli graph paths --format json
+```
+
+Explain why a path exists and see matching lab scenarios:
+
+```bash
+./lab-cli graph explain --goal node
+./lab-cli graph explain --goal secret --format json
+```
+
+Create a snapshot, run an attack, and diff the graph:
+
+```bash
+./lab-cli graph export --format json > before.json
+./lab-cli attack exec
+./lab-cli graph diff --before before.json
+```
+
+Open the browser UI:
+
+```bash
+./lab-cli graph serve --addr 127.0.0.1:8080
+```
+
+Then browse to `http://127.0.0.1:8080` and validate:
+
+- the graph renders from `sa:tenant-a/tenant-sa` by default
+- `+`, `-`, and `100%` change the zoom level
+- `Show Paths` lists ranked impact paths
+- `Explain` shows step-by-step reasons and scenario mappings
+- `Download Snapshot` saves a JSON snapshot
+- `Diff Against Live` compares a saved snapshot after you change the cluster state
+
+Workload-aware checks to expect in the current graph:
+
+- `exec-victim` should contribute a secret-exposure path because it consumes `db-credentials` through env vars
+- `configmap-victim` should contribute a config-integrity path only after the pod exists and consumes `app-bootstrap`
+
 ## 1. RBAC Escalation
 
 Goal:
