@@ -1,0 +1,152 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tenant-sa
+  namespace: tenant-a
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: rbac-manager
+  namespace: tenant-a
+rules:
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["rolebindings"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-rbac-manager
+  namespace: tenant-a
+subjects:
+- kind: ServiceAccount
+  name: tenant-sa
+  namespace: tenant-a
+roleRef:
+  kind: Role
+  name: rbac-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: token-requestor
+  namespace: tenant-a
+rules:
+- apiGroups: [""]
+  resources: ["serviceaccounts/token"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-token-requestor
+  namespace: tenant-a
+subjects:
+- kind: ServiceAccount
+  name: tenant-sa
+  namespace: tenant-a
+roleRef:
+  kind: Role
+  name: token-requestor
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-creator
+  namespace: tenant-a
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-pod-creator
+  namespace: tenant-a
+subjects:
+- kind: ServiceAccount
+  name: tenant-sa
+  namespace: tenant-a
+roleRef:
+  kind: Role
+  name: pod-creator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: exec-operator
+  namespace: tenant-a
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-exec-operator
+  namespace: tenant-a
+subjects:
+- kind: ServiceAccount
+  name: tenant-sa
+  namespace: tenant-a
+roleRef:
+  kind: Role
+  name: exec-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cronjob-creator
+  namespace: tenant-a
+rules:
+- apiGroups: ["batch"]
+  resources: ["cronjobs"]
+  verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-cronjob-creator
+  namespace: tenant-a
+subjects:
+- kind: ServiceAccount
+  name: tenant-sa
+  namespace: tenant-a
+roleRef:
+  kind: Role
+  name: cronjob-creator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: configmap-editor
+  namespace: tenant-a
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-configmap-editor
+  namespace: tenant-a
+subjects:
+- kind: ServiceAccount
+  name: tenant-sa
+  namespace: tenant-a
+roleRef:
+  kind: Role
+  name: configmap-editor
+  apiGroup: rbac.authorization.k8s.io

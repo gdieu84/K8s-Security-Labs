@@ -1,0 +1,11 @@
+./configmap_poison_attack.go
+./cronjob_attack.go
+./escape_attack.go
+./exec_attack.go
+./lateral_attack.go
+./pod_create_attack.go
+./pod_helpers.go
+./rbac_attack.go
+./secrets_attack.go
+./token_attack.go
+./token_request_attack.go

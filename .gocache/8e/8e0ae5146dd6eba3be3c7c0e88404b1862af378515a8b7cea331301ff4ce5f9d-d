@@ -1,0 +1,7 @@
+./gangschedulingpolicy.go
+./podgroup.go
+./podgrouppolicy.go
+./priorityclass.go
+./typedlocalobjectreference.go
+./workload.go
+./workloadspec.go

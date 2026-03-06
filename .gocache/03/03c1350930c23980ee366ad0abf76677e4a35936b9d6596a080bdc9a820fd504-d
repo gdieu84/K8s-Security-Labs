@@ -1,0 +1,11 @@
+./cleanup.go
+./client.go
+./config.go
+./kubectl.go
+./namespaces.go
+./rbac.go
+./reset.go
+./secrets.go
+./serviceaccount.go
+./serviceaccount_tokens.go
+./start.go

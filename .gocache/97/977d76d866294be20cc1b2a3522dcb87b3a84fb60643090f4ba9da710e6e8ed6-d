@@ -1,0 +1,6 @@
+./attack.go
+./destroy.go
+./dispatcher.go
+./reset.go
+./scan.go
+./start.go
