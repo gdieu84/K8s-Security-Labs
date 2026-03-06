@@ -93,7 +93,7 @@ When you run `lab-cli start`, the lab creates:
 
 ### Vulnerable RBAC
 
-The vulnerable roles are created in [internal/cluster/rbac.go](/internal/cluster/rbac.go:12):
+The vulnerable roles are created in [internal/cluster/rbac.go](/internal/cluster/rbac.go#L12):
 
 - `rbac-manager`
   - allows `create` on `rolebindings`
@@ -119,22 +119,22 @@ The lab seeds one secret in `tenant-a`:
   - `username=admin`
   - `password=SuperSecretPassword123`
 
-This is created in [internal/cluster/secrets.go](/internal/cluster/secrets.go:11).
+This is created in [internal/cluster/secrets.go](/internal/cluster/secrets.go#L11).
 
 ## Repository Layout
 
-- [cmd/lab-cli/main.go](/cmd/lab-cli/main.go:1): CLI entrypoint
+- [cmd/lab-cli/main.go](/cmd/lab-cli/main.go#L1): CLI entrypoint
 - [internal/commands](/internal/commands): command dispatch and subcommands
 - [internal/cluster](/internal/cluster): cluster bootstrap, reset, destroy, client helpers
 - [internal/scenarios](/internal/scenarios): attack scenario implementations
-- [internal/scanner/rbac.go](/internal/scanner/rbac.go:1): simple RBAC scanner
-- [manifests/tenants.yaml](/manifests/tenants.yaml:1): static namespace manifest
-- [manifests/vulnerable-rbac.yaml](/manifests/vulnerable-rbac.yaml:1): static RBAC reference manifest
-- [cluster/kind-config.yaml](/cluster/kind-config.yaml:1): sample `kind` cluster config
+- [internal/scanner/rbac.go](/internal/scanner/rbac.go#L1): simple RBAC scanner
+- [manifests/tenants.yaml](/manifests/tenants.yaml#L1): static namespace manifest
+- [manifests/vulnerable-rbac.yaml](/manifests/vulnerable-rbac.yaml#L1): static RBAC reference manifest
+- [cluster/kind-config.yaml](/cluster/kind-config.yaml#L1): sample `kind` cluster config
 
 ## Prerequisites
 
-- Go `1.25` or compatible with [go.mod](/go.mod:1)
+- Go `1.25` or compatible with [go.mod](/go.mod#L1)
 - a running Kubernetes cluster
 - `kubectl` configured to point at that cluster
 - enough privileges from your normal kubeconfig to create namespaces, service accounts, roles, role bindings, pods, secrets, and services
@@ -236,7 +236,7 @@ Runs a basic RBAC check that flags roles with `create` permissions:
 ./lab-cli scan
 ```
 
-Implementation: [internal/scanner/rbac.go](/internal/scanner/rbac.go:1)
+Implementation: [internal/scanner/rbac.go](/internal/scanner/rbac.go#L1)
 
 ### `attack`
 
@@ -259,7 +259,7 @@ Supported values:
 - `lateral`
 - `escape`
 
-Dispatch logic: [internal/commands/attack.go](/internal/commands/attack.go:8)
+Dispatch logic: [internal/commands/attack.go](/internal/commands/attack.go#L8)
 
 ### `graph`
 
@@ -305,12 +305,12 @@ Current subcommands:
 
 Implementation:
 
-- [internal/commands/graph.go](/internal/commands/graph.go:1)
-- [internal/webapp/server.go](/internal/webapp/server.go:1)
-- [internal/webapp/static/index.html](/internal/webapp/static/index.html:1)
-- [internal/webapp/static/app.js](/internal/webapp/static/app.js:1)
+- [internal/commands/graph.go](/internal/commands/graph.go#L1)
+- [internal/webapp/server.go](/internal/webapp/server.go#L1)
+- [internal/webapp/static/index.html](/internal/webapp/static/index.html#L1)
+- [internal/webapp/static/app.js](/internal/webapp/static/app.js#L1)
 
-Implementation entrypoint: [internal/commands/graph.go](/internal/commands/graph.go:10)
+Implementation entrypoint: [internal/commands/graph.go](/internal/commands/graph.go#L10)
 
 ### `reset`
 
@@ -320,7 +320,7 @@ Deletes scenario-created artifacts and restores the vulnerable seed state:
 ./lab-cli reset
 ```
 
-Implementation: [internal/cluster/reset.go](/internal/cluster/reset.go:10)
+Implementation: [internal/cluster/reset.go](/internal/cluster/reset.go#L10)
 
 ### `destroy`
 
@@ -334,7 +334,7 @@ Deletes the lab namespaces:
 
 ### `rbac`
 
-File: [internal/scenarios/rbac_attack.go](/internal/scenarios/rbac_attack.go:12)
+File: [internal/scenarios/rbac_attack.go](/internal/scenarios/rbac_attack.go#L12)
 
 The scenario creates a `RoleBinding` in `tenant-a` that binds `tenant-sa` to the built-in `cluster-admin` `ClusterRole`.
 
@@ -351,7 +351,7 @@ What it shows:
 
 ### `token`
 
-File: [internal/scenarios/token_attack.go](/internal/scenarios/token_attack.go:20)
+File: [internal/scenarios/token_attack.go](/internal/scenarios/token_attack.go#L20)
 
 The scenario creates a pod running as `tenant-sa`, then reads the mounted ServiceAccount token from inside the pod and uses it against the Kubernetes API.
 
@@ -362,7 +362,7 @@ What it shows:
 
 ### `token-request`
 
-File: [internal/scenarios/token_request_attack.go](/internal/scenarios/token_request_attack.go:16)
+File: [internal/scenarios/token_request_attack.go](/internal/scenarios/token_request_attack.go#L16)
 
 The scenario simulates a compromised `tenant-sa` identity, uses it to call the TokenRequest API, and prints a fresh JWT plus the effective permissions of that token.
 
@@ -373,7 +373,7 @@ What it shows:
 
 ### `secrets`
 
-File: [internal/scenarios/secrets_attack.go](/internal/scenarios/secrets_attack.go:12)
+File: [internal/scenarios/secrets_attack.go](/internal/scenarios/secrets_attack.go#L12)
 
 The scenario lists secrets from `tenant-a` and prints their contents.
 
@@ -389,7 +389,7 @@ Practical note:
 
 ### `pod-create`
 
-File: [internal/scenarios/pod_create_attack.go](/internal/scenarios/pod_create_attack.go:16)
+File: [internal/scenarios/pod_create_attack.go](/internal/scenarios/pod_create_attack.go#L16)
 
 The scenario uses compromised `tenant-sa` credentials to create a pod that mounts `db-credentials` and prints the secret values to its logs.
 
@@ -400,7 +400,7 @@ What it shows:
 
 ### `exec`
 
-File: [internal/scenarios/exec_attack.go](/internal/scenarios/exec_attack.go:17)
+File: [internal/scenarios/exec_attack.go](/internal/scenarios/exec_attack.go#L17)
 
 The scenario deploys a victim pod whose environment variables come from `db-credentials`, then uses compromised `tenant-sa` credentials to exec into that pod and print the values.
 
@@ -411,7 +411,7 @@ What it shows:
 
 ### `cronjob`
 
-File: [internal/scenarios/cronjob_attack.go](/internal/scenarios/cronjob_attack.go:15)
+File: [internal/scenarios/cronjob_attack.go](/internal/scenarios/cronjob_attack.go#L15)
 
 The scenario uses compromised `tenant-sa` credentials to create a CronJob in `tenant-a`. It then triggers one run immediately to show that the scheduled workload can repeatedly access the seeded secret.
 
@@ -423,7 +423,7 @@ What it shows:
 
 ### `configmap-poison`
 
-File: [internal/scenarios/configmap_poison_attack.go](/internal/scenarios/configmap_poison_attack.go:15)
+File: [internal/scenarios/configmap_poison_attack.go](/internal/scenarios/configmap_poison_attack.go#L15)
 
 The scenario creates a victim pod that executes a script from a `ConfigMap`, then uses compromised `tenant-sa` credentials to modify that `ConfigMap` and reruns the victim workload to show the changed behavior.
 
@@ -435,7 +435,7 @@ What it shows:
 
 ### `lateral`
 
-File: [internal/scenarios/lateral_attack.go](/internal/scenarios/lateral_attack.go:14)
+File: [internal/scenarios/lateral_attack.go](/internal/scenarios/lateral_attack.go#L14)
 
 The scenario creates a service in `tenant-b` and demonstrates that a pod in `tenant-a` can reach it.
 
@@ -446,7 +446,7 @@ What it shows:
 
 ### `escape`
 
-File: [internal/scenarios/escape_attack.go](/internal/scenarios/escape_attack.go:14)
+File: [internal/scenarios/escape_attack.go](/internal/scenarios/escape_attack.go#L14)
 
 The scenario deploys a privileged pod with `hostPath: /` mounted to `/host`.
 
@@ -457,7 +457,7 @@ What it shows:
 
 ## Manual Exploitation Guide
 
-Step-by-step manual exploitation flows are in [manualtests.md](/manualtests.md:1).
+Step-by-step manual exploitation flows are in [manualtests.md](/manualtests.md#L1).
 
 That file shows how to reproduce each scenario with `kubectl` and shell commands instead of the Go CLI.
 
@@ -482,7 +482,7 @@ The attack graph is intentionally explicit and rule-based.
 - ConfigMaps
 - CronJobs
 
-Inventory collection starts in [internal/attackgraph/inventory.go](/internal/attackgraph/inventory.go:13).
+Inventory collection starts in [internal/attackgraph/inventory.go](/internal/attackgraph/inventory.go#L13).
 
 ### What It Collects From Workloads
 
@@ -556,7 +556,7 @@ The explanation output is built from the actual path edges and includes related 
 
 Snapshot diffing works against the JSON export format. This is intended for before/after comparisons of live cluster state.
 
-Rule construction starts in [internal/attackgraph/build.go](/internal/attackgraph/build.go:18).
+Rule construction starts in [internal/attackgraph/build.go](/internal/attackgraph/build.go#L18).
 
 ### Example Path Shape
 
@@ -583,7 +583,7 @@ The current implementation is deliberately bounded:
 - explanation output and snapshot diffs
 - default starting point is `tenant-sa`
 
-Search and ranking logic starts in [internal/attackgraph/search.go](/internal/attackgraph/search.go:8).
+Search and ranking logic starts in [internal/attackgraph/search.go](/internal/attackgraph/search.go#L8).
 
 ## Development Notes
 
@@ -601,9 +601,9 @@ gofmt -w ./cmd ./internal
 
 ### Main Entry Points
 
-- lab bootstrap: [internal/cluster/start.go](/internal/cluster/start.go:5)
-- scenario dispatch: [internal/commands/attack.go](/internal/commands/attack.go:8)
-- token simulation helper: [internal/cluster/serviceaccount_tokens.go](/internal/cluster/serviceaccount_tokens.go:12)
+- lab bootstrap: [internal/cluster/start.go](/internal/cluster/start.go#L5)
+- scenario dispatch: [internal/commands/attack.go](/internal/commands/attack.go#L8)
+- token simulation helper: [internal/cluster/serviceaccount_tokens.go](/internal/cluster/serviceaccount_tokens.go#L12)
 
 ## Limitations
 
@@ -625,5 +625,5 @@ gofmt -w ./cmd ./internal
 3. Run `./lab-cli scan`.
 4. Execute one scenario at a time.
 5. Use `./lab-cli reset` between scenarios.
-6. Use [manualtests.md](/manualtests.md:1) to reproduce the same exploit path manually.
+6. Use [manualtests.md](/manualtests.md#L1) to reproduce the same exploit path manually.
 7. Run `./lab-cli destroy` when finished.
